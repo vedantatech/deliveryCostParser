@@ -24,24 +24,23 @@
 
   <script>
   // Listen for the widget "ready" event
-  JFCustomWidget.subscribe("ready", function() {
+  JFCustomWidget.subscribe("ready", function () {
     // Get the settings for the widget
     var inputJsonField = JFCustomWidget.getWidgetSetting("inputJsonField"); // Unique input field name
     var parseField = JFCustomWidget.getWidgetSetting("parseField"); // Field to extract ("Cost" or "Address")
 
-    // Fetch the input field dynamically using the provided unique name
-    var inputField = document.getElementById(inputJsonField);
-
-    if (!inputField) {
-      // Handle cases where the input field is not found
-      var resultArea = document.getElementById("resultArea");
-      resultArea.textContent = "Error: Input field with unique name '" + inputJsonField + "' not found.";
-      return;
-    }
-
-    // Function to parse the input field
     function parseInputField() {
-      var jsonResponse = inputField.value.trim(); // Get the value from the input field
+      var inputField = document.getElementById(inputJsonField);
+
+      if (!inputField) {
+        // Handle cases where the input field is not found
+        var resultArea = document.getElementById("resultArea");
+        resultArea.textContent = `Error: Input field with unique name '${inputJsonField}' not found.`;
+        return;
+      }
+
+      // Get the field value (may be empty or dynamic)
+      var jsonResponse = inputField.value.trim();
       var parsedValue = "";
       var displayMsg = "";
 
@@ -76,15 +75,28 @@
       });
     }
 
-    // Add an event listener to the input field
-    inputField.addEventListener("input", parseInputField);
+    // Monitor the input field for changes
+    function monitorField() {
+      var inputField = document.getElementById(inputJsonField);
 
-    // Parse the field once on widget load
-    parseInputField();
+      if (inputField) {
+        // Add event listener to detect changes in the field
+        inputField.addEventListener("input", parseInputField);
+
+        // Also call parseInputField to initialize the widget on form load
+        parseInputField();
+      } else {
+        // Retry monitoring after a delay, in case the field loads dynamically
+        setTimeout(monitorField, 500);
+      }
+    }
+
+    // Start monitoring the input field
+    monitorField();
   });
 
   // When the user submits the form, send the final value
-  JFCustomWidget.subscribe("submit", function() {
+  JFCustomWidget.subscribe("submit", function () {
     var textOutput = document.getElementById("resultArea").textContent || "";
 
     // Send the display text to Jotform as the submitted value
