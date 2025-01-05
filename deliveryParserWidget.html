@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Delivery Parser Widget</title>
+  <!-- Load Jotform Custom Widget API -->
+  <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      margin: 0;
+    }
+    #resultArea {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h3>Delivery Cost/Address Parser</h3>
+  <p>This widget will parse a JSON string and extract either the <em>cost</em> or <em>address</em>.</p>
+  <div id="resultArea">Awaiting data...</div>
+
+  <script>
+  // Listen for the widget "ready" event
+  JFCustomWidget.subscribe("ready", function() {
+    // 1) Get our two important widget settings:
+    var jsonResponse = JFCustomWidget.getWidgetSetting("jsonResponse");
+    var parseField   = JFCustomWidget.getWidgetSetting("parseField"); 
+    // parseField should be either "Cost" or "Address"
+
+    // 2) Let's parse the JSON and pick the correct field
+    var parsedValue = "";
+    var displayMsg  = "";
+
+    try {
+      // Example jsonResponse:
+      // {"cost":"0.11","address":"70 Black Creek Blvd, Toronto, ON M6N 2L2, Canada"}
+      var parsedObj = JSON.parse(jsonResponse);
+
+      // The widget user might choose "Cost" or "Address"
+      if (parseField === "Cost") {
+        parsedValue = parsedObj.cost || "";
+        displayMsg  = "Parsed Cost: " + parsedValue;
+      } else if (parseField === "Address") {
+        parsedValue = parsedObj.address || "";
+        displayMsg  = "Parsed Address: " + parsedValue;
+      } else {
+        // If parseField is not recognized, default to cost
+        parsedValue = parsedObj.cost || "";
+        displayMsg  = "Parsed Cost (default): " + parsedValue;
+      }
+    } catch (error) {
+      displayMsg  = "Error parsing JSON: " + error;
+      parsedValue = "";
+    }
+
+    // 3) Update the widget display
+    var resultArea = document.getElementById("resultArea");
+    resultArea.textContent = displayMsg;
+
+    // 4) Send the chosen value to Jotform
+    //    This is what the form sees as the widget's "value"
+    JFCustomWidget.sendData({
+      value: parsedValue
+    });
+  });
+
+  // When user submits the form, re-send the same value
+  JFCustomWidget.subscribe("submit", function() {
+    var textOutput = document.getElementById("resultArea").textContent || "";
+
+    // You can decide whether to send only `parsedValue` or the entire display text
+    // For simplicity, let's send the entire text we show to the user:
+    var msg = {
+      valid: true,
+      value: textOutput
+    };
+    JFCustomWidget.sendSubmit(msg);
+  });
+  </script>
+</body>
+</html>
